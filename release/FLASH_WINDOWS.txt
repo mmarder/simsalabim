@@ -1,0 +1,58 @@
+==============================================================================
+ KÄLTEKAMMER ESP32  —  v0.1  —  Windows Flash-Anleitung
+==============================================================================
+
+Du brauchst nur EINE Datei:  kaeltekammer-v0.1-merged.bin
+(enthält Bootloader + Partitionstabelle + Firmware + Web-Dashboard)
+
+------------------------------------------------------------------------------
+SCHRITT 0 — USB-Treiber installieren (einmalig)
+------------------------------------------------------------------------------
+Der ESP32 meldet sich am PC als COM-Port. Je nach Board-Chip:
+  - CP2102  -> Silicon Labs CP210x VCP Treiber
+  - CH340   -> WCH CH340 Treiber
+Beide liegen auch im Repo unter:
+  Sources/MC KIT ESP32/DRIVER FOR ESP32/
+Nach Installation: ESP32 per USB anstecken, im Geräte-Manager den COM-Port
+notieren (z.B. COM3).
+
+------------------------------------------------------------------------------
+VARIANTE A — Flash Download Tool (grafisch, am einfachsten)
+------------------------------------------------------------------------------
+1. "Flash Download Tools" von Espressif laden:
+   https://www.espressif.com/en/support/download/other-tools
+2. Starten -> ChipType: ESP32 -> WorkMode: Develop -> OK
+3. Eine Zeile ausfuellen:
+     [x]  kaeltekammer-v0.1-merged.bin        @  0x0
+4. Einstellungen unten:
+     SPI SPEED: 40MHz   SPI MODE: DIO   FLASH SIZE: 32Mbit (4MB)
+5. COM: den notierten Port (z.B. COM3),  BAUD: 921600
+6. "START" klicken. Nach "FINISH" ist der ESP32 geflasht.
+
+------------------------------------------------------------------------------
+VARIANTE B — esptool (Kommandozeile)
+------------------------------------------------------------------------------
+1. Python installieren (python.org), dann in der Eingabeaufforderung:
+     pip install esptool
+2. Flashen (COM3 anpassen):
+     esptool --chip esp32 --port COM3 --baud 921600 write_flash 0x0 kaeltekammer-v0.1-merged.bin
+
+   Falls "Failed to connect": beim Start den BOOT-Knopf am ESP32 gedrueckt
+   halten, bis "Connecting..." erscheint.
+
+------------------------------------------------------------------------------
+NACH DEM FLASHEN
+------------------------------------------------------------------------------
+1. ESP32 neu starten (RESET/EN-Knopf oder USB neu).
+2. Erststart: der ESP32 versucht das hinterlegte WLAN. Schlaegt das fehl,
+   oeffnet er einen WLAN-Hotspot "KaeltekammerSetup".
+   -> Mit Handy verbinden -> Browser http://192.168.4.1 -> WLAN eintragen.
+3. Bei erfolgreicher Verbindung zeigt das LCD die IP-Adresse an.
+4. Dashboard im Browser oeffnen:  http://<IP-des-ESP32>/
+   (zeigt vorerst DEMO-Daten — Phase 0, noch keine echten Sensoren)
+5. Firmware-Update spaeter:  http://<IP-des-ESP32>/update
+   Benutzer: admin   Passwort: kk-samosir
+
+==============================================================================
+ Firmware-Version: v0.1 (Phase 0: WiFi + OTA + LCD + Dashboard-Mockup)
+==============================================================================
