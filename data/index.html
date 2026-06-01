@@ -67,10 +67,21 @@
       <div id="alarms">Keine aktiven Alarme</div>
     </section>
 
+    <section class="card wide">
+      <div class="card-h">SYSTEM / UPDATE</div>
+      <div class="sub">Version: <span id="ota_current">–</span></div>
+      <div class="sub">GitHub: <span id="ota_latest">–</span></div>
+      <div id="ota_status" class="ota-status">Suche nach Updates…</div>
+      <div class="actions" style="margin-top:.7rem">
+        <button class="btn" id="ota_check">GitHub prüfen</button>
+        <button class="btn btn-primary" id="ota_install" hidden>Update installieren</button>
+        <a class="btn" href="/update">Manuell (.bin)</a>
+      </div>
+    </section>
+
     <section class="actions">
-      <a class="btn" href="/settings">Einstellungen</a>
-      <a class="btn" href="/history">Verlauf</a>
-      <a class="btn" href="/update">Update</a>
+      <span class="btn btn-disabled" title="Phase 2">Einstellungen (bald)</span>
+      <span class="btn btn-disabled" title="Phase 2">Verlauf (bald)</span>
     </section>
   </main>
 

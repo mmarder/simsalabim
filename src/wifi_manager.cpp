@@ -128,7 +128,26 @@ bool begin() {
     return true;
   }
 
-  // Connection failed → captive AP for reconfiguration.
+  // Connection failed → log why, then scan so we can see what IS reachable.
+  Serial.printf("[WiFi] connect to '%s' failed, status=%d. Scanning...\n",
+                ssid, (int)WiFi.status());
+  // Reset the radio to a clean STA state so the scan is reliable.
+  WiFi.disconnect(true, true);
+  delay(200);
+  WiFi.mode(WIFI_STA);
+  delay(200);
+  int n = WiFi.scanNetworks();
+  if (n <= 0) {
+    Serial.println("[WiFi] scan found no networks");
+  } else {
+    for (int i = 0; i < n; i++) {
+      Serial.printf("[WiFi]   %2d) %-28s  RSSI %d dBm  ch%d  %s\n",
+                    i + 1, WiFi.SSID(i).c_str(), WiFi.RSSI(i), WiFi.channel(i),
+                    WiFi.encryptionType(i) == WIFI_AUTH_OPEN ? "open" : "enc");
+    }
+  }
+
+  // Captive AP for reconfiguration.
   startAccessPoint();
   return false;
 }

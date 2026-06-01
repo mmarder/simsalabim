@@ -555,8 +555,20 @@ All endpoints served by `AsyncWebServer` on port 80.
 | POST | `/api/cmd/alarm/clear` | `{"ok":true}` | Clear latched non-critical alarms |
 | GET | `/api/config` | JSON of all runtime-adjustable params | |
 | POST | `/api/config` | `{"ok":true}` or `{"error":"..."}` | Body: JSON with changed params |
+| GET | `/api/ota` | JSON `{current, latest, available, installing}` | OTA status |
+| GET\|POST | `/api/ota/check` | `{"ok":true}` | Force an immediate GitHub release check |
+| GET\|POST | `/api/ota/install` | `{"ok":true,"status":"installing"}` / 409 | Self-update from latest GitHub release; reboots on success |
 | GET | `/update` | HTML | ElegantOTA firmware upload page |
 | GET | `/ws` | WebSocket | 1 s push, see §11.2 |
+
+**GitHub OTA security note:** the in-firmware updater uses `client.setInsecure()`
+(no TLS cert validation) for the release check and download. Deliberate: pinning
+a GitHub root cert would break OTA whenever GitHub rotates its roots, stranding a
+remote device with no recovery but a physical reflash. The firmware is published
+from a **public** repo and the local ElegantOTA `/update` path stays the trusted
+channel. `check`/`install` accept GET so they can be triggered from a browser
+address bar during bring-up. On a private repo, set `GITHUB_TOKEN` in
+`config_secrets.h`; on public it stays empty.
 
 ### 11.2 WebSocket JSON Format
 

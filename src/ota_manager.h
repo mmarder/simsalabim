@@ -25,6 +25,14 @@ bool updateAvailable();
 // Triggers an immediate GitHub version check (e.g. from a dashboard button).
 void checkNow();
 
+// Requests a GitHub self-update. Non-blocking: sets a flag that loop()
+// (running in the web task) acts on, so the long download+flash never runs
+// inside an async HTTP handler. No-op if no update is available.
+void requestInstall();
+
+// True while a requested install is pending or in progress (for UI).
+bool installInProgress();
+
 // Downloads and flashes the latest GitHub release firmware.bin.
 // Blocks; reboots on success. Returns false on failure (no reboot).
 bool installLatest();

@@ -6,6 +6,8 @@
 #include <ArduinoJson.h>
 #include <math.h>
 
+#include "ota_manager.h"
+
 namespace web_server {
 
 namespace {
@@ -75,6 +77,40 @@ void begin() {
     String out;
     serializeJson(doc, out);
     req->send(200, "application/json", out);
+  });
+
+  // OTA status: current version, latest GitHub release, whether newer exists.
+  g_server.on("/api/ota", HTTP_GET, [](AsyncWebServerRequest* req) {
+    JsonDocument doc;
+    doc["current"]   = FIRMWARE_VERSION;
+    doc["latest"]    = ota_manager::latestRelease();
+    doc["available"] = ota_manager::updateAvailable();
+    doc["installing"] = ota_manager::installInProgress();
+    String out;
+    serializeJson(doc, out);
+    req->send(200, "application/json", out);
+  });
+
+  // Force an immediate GitHub version check. GET|POST so it can be triggered
+  // straight from a browser address bar during bring-up.
+  g_server.on("/api/ota/check", HTTP_GET | HTTP_POST,
+              [](AsyncWebServerRequest* req) {
+    ota_manager::checkNow();
+    req->send(200, "application/json", "{\"ok\":true}");
+  });
+
+  // Request a self-update from the latest GitHub release. The actual
+  // download+flash happens in the web task (see ota_manager::loop); the device
+  // reboots into the new firmware on success. GET|POST for browser convenience.
+  g_server.on("/api/ota/install", HTTP_GET | HTTP_POST,
+              [](AsyncWebServerRequest* req) {
+    if (!ota_manager::updateAvailable()) {
+      req->send(409, "application/json",
+                "{\"ok\":false,\"error\":\"no update available\"}");
+      return;
+    }
+    ota_manager::requestInstall();
+    req->send(200, "application/json", "{\"ok\":true,\"status\":\"installing\"}");
   });
 
   g_server.addHandler(&g_ws);
