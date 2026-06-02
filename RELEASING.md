@@ -9,6 +9,8 @@ Prerequisites (already true on this Mac — see `STATUS.md`):
 - Rosetta 2 installed (for `mkspiffs` on Apple Silicon)
 - `gh` authenticated as `mmarder`
 
+For flashing details, WiFi setup, and OTA troubleshooting, see `COMMISSIONING.md`.
+
 All commands run from the project root:
 `Sources/kaeltekammer-esp32/`
 
