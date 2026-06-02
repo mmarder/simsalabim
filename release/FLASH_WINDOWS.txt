@@ -1,8 +1,8 @@
 ==============================================================================
- KÄLTEKAMMER ESP32  —  v0.6a  —  Windows Flash-Anleitung
+ KÄLTEKAMMER ESP32  —  v0.7  —  Windows Flash-Anleitung
 ==============================================================================
 
-Du brauchst nur EINE Datei:  kaeltekammer-v0.6a-merged.bin
+Du brauchst nur EINE Datei:  kaeltekammer-v0.7-merged.bin
 (enthält Bootloader + Partitionstabelle + Firmware + Web-Dashboard)
 
 ------------------------------------------------------------------------------
@@ -23,7 +23,7 @@ VARIANTE A — Flash Download Tool (grafisch, am einfachsten)
    https://www.espressif.com/en/support/download/other-tools
 2. Starten -> ChipType: ESP32 -> WorkMode: Develop -> OK
 3. Eine Zeile ausfuellen:
-     [x]  kaeltekammer-v0.6a-merged.bin        @  0x0
+     [x]  kaeltekammer-v0.7-merged.bin        @  0x0
 4. Einstellungen unten:
      SPI SPEED: 40MHz   SPI MODE: DIO   FLASH SIZE: 32Mbit (4MB)
      [x] DoNotChgBin  (verhindert "read reg" Fehler beim Merged-Image)
@@ -36,7 +36,7 @@ VARIANTE B — esptool (Kommandozeile)
 1. Python installieren (python.org), dann in der Eingabeaufforderung:
      pip install esptool
 2. Flashen (COM3 anpassen):
-     esptool --chip esp32 --port COM3 --baud 115200 write_flash 0x0 kaeltekammer-v0.6a-merged.bin
+     esptool --chip esp32 --port COM3 --baud 115200 write_flash 0x0 kaeltekammer-v0.7-merged.bin
 
    Falls "Failed to connect": beim Start den BOOT-Knopf am ESP32 gedrueckt
    halten, bis "Connecting..." erscheint.
@@ -55,5 +55,5 @@ NACH DEM FLASHEN
    Benutzer: admin   Passwort: kk-samosir
 
 ==============================================================================
- Firmware-Version: v0.6a (Phase 0: WiFi + OTA + LCD + Dashboard-Mockup)
+ Firmware-Version: v0.7 (Phase 0: WiFi + OTA + LCD + Dashboard-Mockup)
 ==============================================================================

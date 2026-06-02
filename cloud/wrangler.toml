@@ -1,0 +1,13 @@
+name = "kk-status"
+main = "worker.js"
+compatibility_date = "2025-01-01"
+
+# KV namespace for the latest status. Create it once and paste the id here:
+#   wrangler kv namespace create STATUS_KV
+[[kv_namespaces]]
+binding = "STATUS_KV"
+id = "PASTE_KV_NAMESPACE_ID_HERE"
+
+# INGEST_TOKEN is a SECRET, not set here. Set it with:
+#   wrangler secret put INGEST_TOKEN
+# (must match TELEMETRY_TOKEN in the firmware's config_secrets.h)

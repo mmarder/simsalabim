@@ -22,9 +22,22 @@ Phase 0 (bootstrap) is built, released, and **verified on a physical ESP32**.
 | Dashboard System/Update card + install button | ✅ built |
 | Real sensors / control / safety logic | ⬜ Phase 1+ |
 
-**Latest release:** `v0.5` on https://github.com/mmarder/simsalabim/releases
-(repo is **public**).
-**Current dev board:** running `v0.5`, joined to WiFi `Thomas`, last seen at `192.168.1.80`.
+**Latest release:** `v0.7` on https://github.com/mmarder/simsalabim/releases
+(repo is **public**). v0.6a was an auto-deploy test.
+**Current dev board:** last known on `v0.6a`, WiFi `Thomas`. **Access is now
+OTA-only** (no USB, no local web). To push firmware to it, release an `…a`
+auto-deploy tag — it pulls within ~6 h (or on reboot). `v0.7` is a manual tag, so
+the board will NOT auto-install it; telemetry is activated by a future baked +
+auto-deployed build (see v0.7 note below).
+
+**v0.7 adds: remote telemetry (online status).** A low-priority task POSTs the
+status JSON to a cloud endpoint (Cloudflare Worker + KV in `cloud/`, public
+read-only viewer). Disabled by default; config via `POST /api/telemetry`
+(SPIFFS) which overrides the compiled `TELEMETRY_URL`/`TELEMETRY_TOKEN`. Settings
+page has a telemetry form. **Activation path with OTA-only access:** bake the
+Worker URL+token into `config_secrets.h` and auto-deploy (token then lives in the
+public binary — rotatable). ⚠️ **Not yet verified live on hardware** (no USB /
+local access); will verify after the Worker is deployed + an `…a` auto-deploy.
 
 **Tests + CI (added 2026-06-02):** first host-native unit tests
 (`test/test_version`, 9 cases) cover the OTA version logic (`src/ota_version.h`,

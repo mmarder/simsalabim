@@ -14,6 +14,7 @@
 #include "lcd_display.h"
 #include "web_server.h"
 #include "hardware.h"
+#include "telemetry.h"
 
 // LCD progress callback during the (blocking) WiFi connect attempt.
 static void wifiProgress(const char* ssid, int elapsed_s, int max_s) {
@@ -56,6 +57,18 @@ void netTask(void*) {
   }
 }
 
+// ── Task: remote telemetry (priority 1, lowest) ──────────────────────────────
+// Fire-and-forget POST of the status JSON. Lowest priority and fully isolated:
+// it must never delay the control/safety loop. No-op unless configured.
+void telemetryTask(void*) {
+  for (;;) {
+    if (telemetry::enabled() && wifi_manager::isConnected()) {
+      telemetry::postOnce();   // blocks here only, in this low-prio task
+    }
+    vTaskDelay(pdMS_TO_TICKS(TELEMETRY_INTERVAL_MS));
+  }
+}
+
 void setup() {
   Serial.begin(115200);
   delay(200);
@@ -78,6 +91,9 @@ void setup() {
   lcd_display::setBoot("Scan Hardware..");
   hardware::scan();
 
+  // Load telemetry config (SPIFFS override or compiled default).
+  telemetry::begin();
+
   lcd_display::setBoot("WiFi suchen...");
   bool connected = wifi_manager::begin(wifiProgress);
   if (connected) {
@@ -94,6 +110,7 @@ void setup() {
   xTaskCreatePinnedToCore(webTask, "web", 8192, nullptr, 2, nullptr, 1);
   xTaskCreatePinnedToCore(lcdTask, "lcd", 2048, nullptr, 2, nullptr, 1);
   xTaskCreatePinnedToCore(netTask, "net", 4096, nullptr, 1, nullptr, 0);
+  xTaskCreatePinnedToCore(telemetryTask, "tele", 8192, nullptr, 1, nullptr, 0);
 }
 
 void loop() {

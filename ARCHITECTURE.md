@@ -191,6 +191,9 @@ kaeltekammer-esp32/
 │   ├── lcd_display.h / .cpp          16×2 I2C, staged boot messages, screen rotation     [Phase 0 ✓]
 │   ├── web_server.h / .cpp           AsyncWebServer, REST API, WebSocket                 [Phase 0 ✓]
 │   ├── hardware.h / .cpp             OneWire/I²C detection + live pin status (/api/hardware) [Phase 0 ✓]
+│   ├── status.h / .cpp               Shared status-JSON builder (web + telemetry)        [Phase 0 ✓]
+│   ├── telemetry.h / .cpp            Fire-and-forget status POST to cloud (SPIFFS/compiled cfg) [Phase 0 ✓]
+│   ├── ota_version.h                 Host-tested version logic (header-only, no Arduino)  [Phase 0 ✓]
 │   ├── sensors/                      [Phase 1 — planned]
 │   │   ├── temperature.h / .cpp      DS18B20 OneWire, 11 sensors, address map
 │   │   ├── humidity.h / .cpp         SHT31 I²C
@@ -217,7 +220,13 @@ kaeltekammer-esp32/
 │   ├── app.js / style.css            Dashboard logic + styles              [Phase 0 ✓]
 │   ├── history.html                  24h / 7d charts                       [Phase 2 — planned]
 │   └── alarms.html                   Alarm log                             [Phase 2 — planned]
+├── cloud/                            Telemetry backend (Cloudflare Worker + KV)  [Phase 0 ✓]
+│   ├── worker.js                     Ingest (POST) + public viewer (GET) + /data
+│   ├── wrangler.toml                 Worker config (KV binding; secret set separately)
+│   └── README.md                     Deploy steps
+├── .github/workflows/ci.yml          CI: native tests + esp32 build on push/PR   [Phase 0 ✓]
 └── test/
+    ├── test_version/                 ✅ OTA version logic (implemented)
     ├── test_modes/                   Mode determination tests
     ├── test_safety/                  Safety threshold and latch tests
     ├── test_defrost/                 Defrost state machine tests
@@ -570,6 +579,20 @@ All endpoints served by `AsyncWebServer` on port 80.
 `/api/ota` also returns `auto` (bool) — true when the latest release tag is an
 auto-deploy tag (see §11.5).
 
+**§11.6 Remote telemetry (v0.7+).** A low-priority task (`telemetry.cpp`) does a
+fire-and-forget HTTPS POST of the status JSON (the same `status::buildJson` used
+by `/api/state`, plus a `device` field) to a cloud endpoint every
+`TELEMETRY_INTERVAL_MS` (30 s). **It must never block or affect the
+control/safety loop** — lowest priority, bounded 8 s timeout, silent on failure,
+and a full no-op unless configured. Config precedence mirrors WiFi: a runtime
+config in SPIFFS (`/telemetry.json`, set via `POST /api/telemetry`) **overrides**
+the compile-time `TELEMETRY_URL`/`TELEMETRY_TOKEN` in `config_secrets.h`. Auth is
+a bearer token. The backend is a Cloudflare Worker + KV serving a public,
+read-only viewer (see `cloud/`). TLS uses `setInsecure()` (same rationale as
+OTA). **Caveat:** a token baked into a public release binary is extractable —
+prefer the runtime config where local access exists; treat a baked ingest token
+as low-value and rotatable.
+
 **§11.5 Auto-deploy releases (v0.5+).** A release whose tag ends in lowercase
 `a` (e.g. `v0.7a`) is **auto-installed** by eligible devices without any user
 action: on the next GitHub check the device pulls firmware **and** filesystem
@@ -583,6 +606,8 @@ fleet-wide rollouts; use a plain tag (no `a`) when you want a manual,
 operator-confirmed update.
 | GET | `/api/hardware` | JSON | Hardware status: OneWire/I²C scan + live input/analog reads (see §11.4) |
 | GET\|POST | `/api/hardware/rescan` | `{"ok":true}` | Re-scan I²C/OneWire (performed by the LCD task to avoid bus races) |
+| GET | `/api/telemetry` | JSON `{enabled,url,token_set,source,last_status,secs_since_ok}` | Telemetry status (token never returned) |
+| POST | `/api/telemetry` | `{"ok":true}` | Set telemetry URL+token (form params `url`,`token`); stored in SPIFFS |
 | GET | `/settings.html` | HTML | Settings page — live hardware status list (auto-refresh 3 s) |
 | GET | `/update` | HTML | ElegantOTA firmware upload page |
 | GET | `/ws` | WebSocket | 1 s push, see §11.2 |

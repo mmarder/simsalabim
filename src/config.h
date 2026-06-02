@@ -6,7 +6,7 @@
 // =============================================================================
 
 // ── Firmware identity ───────────────────────────────────────────────────────
-#define FIRMWARE_VERSION   "v0.6a"
+#define FIRMWARE_VERSION   "v0.7"
 #define DEVICE_NAME        "KK-Samosir"
 
 // ── GitHub Releases OTA ─────────────────────────────────────────────────────
@@ -54,6 +54,10 @@
 // ── Web server ──────────────────────────────────────────────────────────────
 #define WEB_PORT           80
 #define WS_PUSH_INTERVAL_MS  1000     // WebSocket broadcast cadence
+
+// ── Remote telemetry (optional online status; see cloud/) ────────────────────
+// TELEMETRY_URL + TELEMETRY_TOKEN live in config_secrets.h. Empty = disabled.
+#define TELEMETRY_INTERVAL_MS  (30UL * 1000UL)   // POST cadence (30 s)
 
 // ── Sensor sentinel ─────────────────────────────────────────────────────────
 #define SENSOR_ERROR       (-127.0f)  // DS18B20 invalid-reading marker

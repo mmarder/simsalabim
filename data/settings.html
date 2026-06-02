@@ -51,6 +51,21 @@
     </section>
 
     <section class="card wide">
+      <div class="card-h">ONLINE-TELEMETRIE</div>
+      <div id="tele_status" class="sub" style="color:var(--muted)">lädt…</div>
+      <p class="sub">Endpoint-URL:<br>
+        <input id="tele_url" placeholder="https://kk-status.<you>.workers.dev/ingest"
+               style="width:100%;padding:.5em;background:#0d1117;color:#e6edf3;border:1px solid #30363d;border-radius:8px"></p>
+      <p class="sub">Token:<br>
+        <input id="tele_token" type="password" placeholder="(unverändert lassen, um beizubehalten)"
+               style="width:100%;padding:.5em;background:#0d1117;color:#e6edf3;border:1px solid #30363d;border-radius:8px"></p>
+      <div class="actions" style="margin-top:.5rem">
+        <button class="btn btn-primary" id="tele_save">Speichern</button>
+        <button class="btn" id="tele_clear">Zurücksetzen</button>
+      </div>
+    </section>
+
+    <section class="card wide">
       <div class="card-h">REGELPARAMETER</div>
       <div class="sub" style="color:var(--muted)">Einstellbare Sollwerte & Hysteresen folgen in Phase 2.</div>
     </section>
@@ -114,8 +129,43 @@
     setTimeout(refresh, 1500);
   });
 
+  // ── Telemetry config + status ──────────────────────────────────────────
+  async function refreshTele() {
+    try {
+      const t = await (await fetch("/api/telemetry")).json();
+      const src = {runtime:"Laufzeit (SPIFFS)",compiled:"Firmware-Default",none:"nicht konfiguriert"}[t.source]||t.source;
+      let s = t.enabled ? "✅ aktiv" : "⚪ inaktiv";
+      s += " · Quelle: " + src;
+      if (t.enabled) {
+        const code = t.last_status===0?"noch nichts gesendet":(t.last_status===-1?"Verbindungsfehler":"HTTP "+t.last_status);
+        s += " · letzter POST: " + code;
+        if (t.secs_since_ok>0) s += " · letzter Erfolg vor "+t.secs_since_ok+"s";
+      }
+      $("tele_status").textContent = s;
+      if (t.url && !$("tele_url").matches(":focus")) $("tele_url").value = t.url;
+    } catch(e){ $("tele_status").textContent = "Gerät nicht erreichbar"; }
+  }
+  $("tele_save").addEventListener("click", async () => {
+    const body = new URLSearchParams();
+    body.set("url", $("tele_url").value.trim());
+    body.set("token", $("tele_token").value);  // empty keeps existing only if url unchanged; server stores as given
+    $("tele_status").textContent = "speichere…";
+    await fetch("/api/telemetry", {method:"POST", headers:{"Content-Type":"application/x-www-form-urlencoded"}, body});
+    $("tele_token").value = "";
+    setTimeout(refreshTele, 800);
+  });
+  $("tele_clear").addEventListener("click", async () => {
+    if(!confirm("Telemetrie-Konfiguration zurücksetzen?")) return;
+    const body = new URLSearchParams(); body.set("url",""); body.set("token","");
+    await fetch("/api/telemetry", {method:"POST", headers:{"Content-Type":"application/x-www-form-urlencoded"}, body});
+    $("tele_url").value=""; $("tele_token").value="";
+    setTimeout(refreshTele, 800);
+  });
+
   refresh();
+  refreshTele();
   setInterval(refresh, 3000);
-  </script>
+  setInterval(refreshTele, 5000);
+</script>
 </body>
 </html>
