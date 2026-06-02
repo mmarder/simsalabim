@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      # Cache the PlatformIO toolchain + platform packages between runs
+      # (the ESP32 build otherwise re-downloads hundreds of MB each time).
+      - name: Cache PlatformIO
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.platformio
+            ~/.cache/pip
+          key: pio-${{ runner.os }}-${{ hashFiles('platformio.ini') }}
+          restore-keys: pio-${{ runner.os }}-
+
+      - name: Install PlatformIO
+        run: pip install --upgrade platformio
+
+      # config_secrets.h is git-ignored; the firmware build needs the macros,
+      # so synthesise a placeholder from the committed template.
+      - name: Create placeholder secrets
+        run: cp src/config_secrets.h.example src/config_secrets.h
+
+      - name: Run unit tests (host-native)
+        run: pio test -e native
+
+      - name: Build firmware (esp32dev)
+        run: pio run -e esp32dev

@@ -48,7 +48,7 @@ Per `DEVELOPMENT.md`, before any release:
 ```bash
 export PATH="$HOME/Library/Python/3.9/bin:$PATH"
 
-# Unit tests (required once Phase 1 logic exists; Phase 0 has none yet)
+# Unit tests (host-native) — must be green
 pio test -e native
 
 # Clean compile, zero errors
@@ -57,6 +57,11 @@ pio run -e esp32dev
 # Confirm the app still fits the OTA partition (app0/app1 = 1.75 MB each)
 pio run -e esp32dev -t size
 ```
+
+**Also confirm GitHub Actions CI is green** for the commit you are releasing
+(`gh run list --branch main --limit 1`, or the Actions tab). CI runs the same
+`pio test -e native` + `pio run -e esp32dev` on every push/PR — do not tag a
+release on a red commit.
 
 If this release touched the safety/control layer, complete **Phase 4 (Safety
 Review)** and **Phase 6 (Test Verification)** from `DEVELOPMENT.md` first.

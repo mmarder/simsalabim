@@ -10,6 +10,8 @@
 #include <ArduinoJson.h>
 #include <Preferences.h>
 
+#include "ota_version.h"
+
 namespace ota_manager {
 
 namespace {
@@ -23,8 +25,9 @@ bool g_autoInstall = false;     // set when the current install was auto-trigger
 
 // A release tag ending in 'a' (e.g. "v0.7a") is an AUTO-DEPLOY release: eligible
 // devices install it without user interaction. The 'a' is ignored by isNewer().
+// Logic lives in ota_version.h (host-tested; see test/test_version).
 bool isAutoTag(const String& tag) {
-  return tag.length() > 0 && tag.charAt(tag.length() - 1) == 'a';
+  return ota_version::is_auto_tag(tag.c_str());
 }
 
 // Persisted (NVS) tag of the last successfully auto-installed release. Used as a
@@ -47,26 +50,10 @@ void saveAutoTag(const String& tag) {
 // Compare semantic-ish version tags "vMAJOR.MINOR". Returns true if `tag`
 // is strictly newer than the running FIRMWARE_VERSION. Tolerant of a leading
 // 'v' and missing minor component. Non-numeric → treated as not-newer.
+// Is `tag` newer than the running firmware? Delegates to the host-tested
+// pure logic in ota_version.h (see test/test_version).
 bool isNewer(const String& tag) {
-  auto parse = [](const String& s, long& maj, long& min) {
-    int i = 0;
-    if (i < (int)s.length() && (s[i] == 'v' || s[i] == 'V')) i++;
-    maj = 0; min = 0;
-    long* cur = &maj;
-    bool any = false;
-    for (; i < (int)s.length(); i++) {
-      char c = s[i];
-      if (c >= '0' && c <= '9') { *cur = (*cur) * 10 + (c - '0'); any = true; }
-      else if (c == '.' && cur == &maj) { cur = &min; }
-      else break;
-    }
-    return any;
-  };
-  long tMaj, tMin, cMaj, cMin;
-  if (!parse(tag, tMaj, tMin)) return false;
-  if (!parse(String(FIRMWARE_VERSION), cMaj, cMin)) return false;
-  if (tMaj != cMaj) return tMaj > cMaj;
-  return tMin > cMin;
+  return ota_version::is_newer(tag.c_str(), FIRMWARE_VERSION);
 }
 
 // Queries GitHub for the latest release tag. Stores it in g_latestTag.

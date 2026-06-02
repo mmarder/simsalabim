@@ -26,6 +26,13 @@ Phase 0 (bootstrap) is built, released, and **verified on a physical ESP32**.
 (repo is **public**).
 **Current dev board:** running `v0.5`, joined to WiFi `Thomas`, last seen at `192.168.1.80`.
 
+**Tests + CI (added 2026-06-02):** first host-native unit tests
+(`test/test_version`, 9 cases) cover the OTA version logic (`src/ota_version.h`,
+header-only pure module). GitHub Actions (`.github/workflows/ci.yml`) runs
+`pio test -e native` + `pio run -e esp32dev` on every push/PR. Releases must be
+on a green commit (see RELEASING.md). **This is the test harness for Phase 1** —
+new control/safety logic goes into host-testable pure modules with tests.
+
 **v0.5 adds:** **auto-deploy releases** — a release tag ending in `a` (e.g.
 `v0.7a`) is installed automatically by devices (firmware + filesystem) on their
 next GitHub check, no operator action. Loop guard: last auto-installed tag is

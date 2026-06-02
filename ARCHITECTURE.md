@@ -502,6 +502,12 @@ Every function in this list must have unit tests in `test/`. Tests run on the na
 | `pv_forecast.cpp` | `calc_solar_watt()` | Before sunrise → 0 W; after sunset → 0 W; solar noon → near PV_PEAK × ETA; midnight → 0 W |
 | `sensors/temperature.cpp` | `validate_temperature()` | −127.0 (DS18B20 CRC error) → SENSOR_ERROR; −60.0 → valid; +150.0 → valid; +150.1 → SENSOR_ERROR; +85.0 (DS18B20 power-on default) → SENSOR_ERROR |
 | `modbus_deye.cpp` | `parse_grid_power()` | 0x0064 (+100 W export) → +100.0f; 0xFFFF (−1 in S_WORD) → −1.0f; 0x8000 → −32768.0f (max import) |
+| `ota_version.h` ✅ | `is_newer()` / `is_auto_tag()` | **Implemented + tested** (`test/test_version`, 9 cases): minor/major ordering, multi-digit, 'a' suffix ignored in compare, equal→not-newer (loop guard), bad/empty/null input fail-safe, auto-tag detection |
+
+**CI:** `.github/workflows/ci.yml` runs `pio test -e native` + `pio run -e esp32dev`
+on every push/PR (toolchain cached). The native test env (`test_build_src = no`)
+compiles only the tests + header-only pure modules — no Arduino sources — so
+business logic must stay free of Arduino deps to be testable on the host.
 
 ---
 
