@@ -20,6 +20,10 @@ bool begin();
 // Switches the active screen.
 void setScreen(Screen s);
 
+// Shows the boot screen: firmware version on line 1, `msg` on line 2.
+// Used during setup() to report each startup step (drawn immediately).
+void setBoot(const String& msg);
+
 // Updates the two-line text for the STATUS screen.
 void setStatus(const String& ip, int rssi);
 

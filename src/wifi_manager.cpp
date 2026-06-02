@@ -107,7 +107,9 @@ void handlePortalSave() {
 
 }  // namespace
 
-bool begin() {
+const char* currentSsid() { return ssid; }
+
+bool begin(ProgressFn progress) {
   if (!credentialsLoaded) {
     loadCredentials();
     credentialsLoaded = true;
@@ -117,10 +119,17 @@ bool begin() {
   WiFi.setHostname(DEVICE_NAME);
   WiFi.begin(ssid, pass);
 
+  const int max_s = WIFI_CONNECT_TIMEOUT_MS / 1000;
   uint32_t start = millis();
+  int lastReported = -1;
   while (WiFi.status() != WL_CONNECTED &&
          millis() - start < WIFI_CONNECT_TIMEOUT_MS) {
     delay(250);
+    int elapsed = (millis() - start) / 1000;
+    if (progress && elapsed != lastReported) {
+      lastReported = elapsed;
+      progress(ssid, elapsed, max_s);
+    }
   }
 
   if (WiFi.status() == WL_CONNECTED) {

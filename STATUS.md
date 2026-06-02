@@ -22,9 +22,17 @@ Phase 0 (bootstrap) is built, released, and **verified on a physical ESP32**.
 | Dashboard System/Update card + install button | ✅ built |
 | Real sensors / control / safety logic | ⬜ Phase 1+ |
 
-**Latest release:** `v0.2` on https://github.com/mmarder/simsalabim/releases
+**Latest release:** `v0.3` on https://github.com/mmarder/simsalabim/releases
 (repo is **public**).
-**Current dev board:** running `v0.2`, joined to WiFi `Thomas`, last seen at `192.168.1.80`.
+**Current dev board:** running `v0.3`, joined to WiFi `Thomas`, last seen at `192.168.1.80`.
+
+**v0.3 adds:** staged LCD boot messages (SPIFFS → hardware scan → WiFi connect
+countdown → IP); a `/settings.html` hardware-status page (live, auto-refresh)
+backed by `/api/hardware`; OneWire DS18B20 enumeration + I²C device detection.
+Verified on hardware: dashboard, settings page, hardware API (LCD detected at
+0x27, 0 DS18B20 with none wired, live input levels). ⚠️ OTA updates firmware
+only — SPIFFS changes (like `settings.html`) need a full flash; filesystem-OTA
+is a planned follow-up.
 
 ### What was verified on the physical board (2026-06-01/02)
 - Merged image flashes at `0x0`, `Hash of data verified`.

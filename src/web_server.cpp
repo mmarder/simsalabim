@@ -7,6 +7,7 @@
 #include <math.h>
 
 #include "ota_manager.h"
+#include "hardware.h"
 
 namespace web_server {
 
@@ -111,6 +112,22 @@ void begin() {
     }
     ota_manager::requestInstall();
     req->send(200, "application/json", "{\"ok\":true,\"status\":\"installing\"}");
+  });
+
+  // Hardware status: bus scan + live input/analog reads (see hardware.cpp).
+  g_server.on("/api/hardware", HTTP_GET, [](AsyncWebServerRequest* req) {
+    JsonDocument doc;
+    hardware::toJson(doc);
+    String out;
+    serializeJson(doc, out);
+    req->send(200, "application/json", out);
+  });
+
+  // Re-scan the I2C/OneWire buses (handled by the LCD task to avoid bus races).
+  g_server.on("/api/hardware/rescan", HTTP_GET | HTTP_POST,
+              [](AsyncWebServerRequest* req) {
+    hardware::requestRescan();
+    req->send(200, "application/json", "{\"ok\":true}");
   });
 
   g_server.addHandler(&g_ws);

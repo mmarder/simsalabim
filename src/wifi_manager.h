@@ -5,11 +5,19 @@
 
 namespace wifi_manager {
 
-// Mounts SPIFFS-stored credentials and attempts connection.
+// Progress callback invoked ~once per second during the connect attempt, so the
+// caller can show live status (e.g. on the LCD). elapsed/max are in seconds.
+typedef void (*ProgressFn)(const char* ssid, int elapsed_s, int max_s);
+
+// Loads stored credentials and attempts connection.
 // If no credentials exist or connection fails within WIFI_CONNECT_TIMEOUT_MS,
 // opens the "KaeltekammerSetup" captive AP for configuration.
+// `progress` (optional) is called each second during the connect wait.
 // Returns true if connected as a station, false if running in AP setup mode.
-bool begin();
+bool begin(ProgressFn progress = nullptr);
+
+// The SSID currently being used (from /wifi.json or the compiled default).
+const char* currentSsid();
 
 // True when connected to the configured WiFi network (station mode).
 bool isConnected();

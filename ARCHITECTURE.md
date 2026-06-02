@@ -558,8 +558,25 @@ All endpoints served by `AsyncWebServer` on port 80.
 | GET | `/api/ota` | JSON `{current, latest, available, installing}` | OTA status |
 | GET\|POST | `/api/ota/check` | `{"ok":true}` | Force an immediate GitHub release check |
 | GET\|POST | `/api/ota/install` | `{"ok":true,"status":"installing"}` / 409 | Self-update from latest GitHub release; reboots on success |
+| GET | `/api/hardware` | JSON | Hardware status: OneWire/I²C scan + live input/analog reads (see §11.4) |
+| GET\|POST | `/api/hardware/rescan` | `{"ok":true}` | Re-scan I²C/OneWire (performed by the LCD task to avoid bus races) |
+| GET | `/settings.html` | HTML | Settings page — live hardware status list (auto-refresh 3 s) |
 | GET | `/update` | HTML | ElegantOTA firmware upload page |
 | GET | `/ws` | WebSocket | 1 s push, see §11.2 |
+
+**§11.4 Hardware status (`/api/hardware`).** Reports what is actually wired, for
+bring-up. Auto-detected: DS18B20 count on the OneWire bus (GPIO4) and I²C device
+presence (LCD 0x27/0x3F, SHT31 0x44/0x45). Live reads: digital input levels
+(door 19, HP 34, LP 35, flow 39) and the SCT-013 ADC (36). Relay outputs K1–K5
+are listed but **not driven** in Phase 0 (driving them could energise the
+compressor/defrost relay; SSR polarity unconfirmed) — so they cannot be
+sense-detected. Modbus devices are "Phase 1". Bus scans run at boot and on
+rescan in the LCD task (it owns I²C); input reads happen live in the web task.
+
+> ⚠️ **OTA caveat:** GitHub/ElegantOTA self-update flashes the **app partition
+> only** — it does NOT update SPIFFS (web pages). New/changed files under
+> `data/` (e.g. `settings.html` in v0.3) require a **full flash** or filesystem
+> upload. A filesystem-OTA path is a planned follow-up.
 
 **GitHub OTA security note:** the in-firmware updater uses `client.setInsecure()`
 (no TLS cert validation) for the release check and download. Deliberate: pinning

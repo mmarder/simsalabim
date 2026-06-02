@@ -13,6 +13,14 @@
 #include "ota_manager.h"
 #include "lcd_display.h"
 #include "web_server.h"
+#include "hardware.h"
+
+// LCD progress callback during the (blocking) WiFi connect attempt.
+static void wifiProgress(const char* ssid, int elapsed_s, int max_s) {
+  char buf[24];
+  snprintf(buf, sizeof(buf), "%.10s %ds/%ds", ssid, elapsed_s, max_s);
+  lcd_display::setBoot(buf);
+}
 
 // ── Task: web + WebSocket broadcast (priority 2) ─────────────────────────────
 void webTask(void*) {
@@ -29,6 +37,9 @@ void webTask(void*) {
 // ── Task: LCD refresh (priority 2) ───────────────────────────────────────────
 void lcdTask(void*) {
   for (;;) {
+    // The LCD task owns the I2C bus, so it also services hardware rescans
+    // (which probe I2C) to keep all bus access on one task.
+    hardware::serviceRescan();
     if (wifi_manager::isConnected()) {
       lcd_display::setStatus(wifi_manager::ipAddress(), wifi_manager::rssi());
     }
@@ -50,17 +61,28 @@ void setup() {
   delay(200);
   Serial.println("\n=== " DEVICE_NAME " " FIRMWARE_VERSION " booting ===");
 
+  lcd_display::begin();
+  lcd_display::setBoot("Starte...");
+
   // SPIFFS holds /wifi.json, /config.json, and the web assets.
   if (!SPIFFS.begin(true)) {
     Serial.println("[FATAL] SPIFFS mount failed");
+    lcd_display::setBoot("SPIFFS FEHLER!");
+  } else {
+    lcd_display::setBoot("SPIFFS OK");
   }
 
-  lcd_display::begin();
-  lcd_display::setScreen(lcd_display::SCREEN_BOOT);
+  // Configure safe-to-touch input pins, then scan the peripheral buses so the
+  // hardware-status page has data immediately (Wire is up after lcd begin).
+  hardware::initPins();
+  lcd_display::setBoot("Scan Hardware..");
+  hardware::scan();
 
-  bool connected = wifi_manager::begin();
+  lcd_display::setBoot("WiFi suchen...");
+  bool connected = wifi_manager::begin(wifiProgress);
   if (connected) {
     Serial.printf("[WiFi] connected: %s\n", wifi_manager::ipAddress().c_str());
+    lcd_display::setBoot("OK " + wifi_manager::ipAddress());
     lcd_display::setStatus(wifi_manager::ipAddress(), wifi_manager::rssi());
   } else {
     Serial.printf("[WiFi] AP setup mode: http://%s\n",

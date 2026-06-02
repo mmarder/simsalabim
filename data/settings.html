@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Einstellungen · Kältekammer</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header>
+    <div class="title">⚙ EINSTELLUNGEN</div>
+    <div class="subline"><a href="/" style="color:var(--accent)">← Dashboard</a> · Hardware-Status</div>
+  </header>
+
+  <main>
+    <section class="card wide">
+      <div class="card-h">HARDWARE-STATUS
+        <button class="btn" id="rescan" style="float:right;padding:.2rem .6rem;min-height:auto">Neu scannen</button>
+      </div>
+      <div id="scan_age" class="sub" style="color:var(--muted)">lädt…</div>
+    </section>
+
+    <section class="card wide">
+      <div class="card-h">TEMPERATURSENSOREN (OneWire)</div>
+      <div id="onewire">–</div>
+    </section>
+
+    <section class="card wide">
+      <div class="card-h">I²C-GERÄTE</div>
+      <div id="i2c">–</div>
+    </section>
+
+    <section class="card wide">
+      <div class="card-h">DIGITALE EINGÄNGE (live)</div>
+      <div id="inputs">–</div>
+    </section>
+
+    <section class="card wide">
+      <div class="card-h">ANALOG (live)</div>
+      <div id="analog">–</div>
+    </section>
+
+    <section class="card wide">
+      <div class="card-h">RELAIS-AUSGÄNGE</div>
+      <div id="outputs">–</div>
+    </section>
+
+    <section class="card wide">
+      <div class="card-h">MODBUS (RS485)</div>
+      <div id="modbus">–</div>
+    </section>
+
+    <section class="card wide">
+      <div class="card-h">REGELPARAMETER</div>
+      <div class="sub" style="color:var(--muted)">Einstellbare Sollwerte & Hysteresen folgen in Phase 2.</div>
+    </section>
+
+    <section class="actions">
+      <a class="btn" href="/">Dashboard</a>
+      <a class="btn" href="/update">Update</a>
+    </section>
+  </main>
+
+  <script>
+  const $ = (id) => document.getElementById(id);
+  const dot = (ok) => `<span class="hw-dot ${ok ? 'ok' : 'no'}"></span>`;
+  const row = (html) => `<div class="hw-row">${html}</div>`;
+
+  function render(d) {
+    $("scan_age").textContent = d.scanned
+      ? `Bus-Scan vor ${d.scan_age_s}s · Eingänge live`
+      : "noch nicht gescannt";
+
+    // OneWire
+    const ow = d.onewire;
+    const owOk = ow.ds18b20_found > 0;
+    $("onewire").innerHTML = row(
+      `${dot(owOk)} <b>${ow.ds18b20_found}</b> / ${ow.expected} DS18B20 erkannt` +
+      `<span class="hw-meta">GPIO${ow.pin}${ow.devices_total !== ow.ds18b20_found ? ' · '+ow.devices_total+' Geräte gesamt' : ''}</span>`);
+
+    // I2C
+    $("i2c").innerHTML = d.i2c.devices.map(x =>
+      row(`${dot(x.present)} ${x.label}<span class="hw-meta">${x.addr}</span>`)).join("") +
+      row(`<span class="hw-meta">Gefundene Adressen: ${d.i2c.addresses.length ? d.i2c.addresses.join(", ") : "keine"} · SDA${d.i2c.sda}/SCL${d.i2c.scl}</span>`);
+
+    // Inputs (live)
+    $("inputs").innerHTML = d.inputs.map(x => {
+      const hi = x.level === "HIGH";
+      return row(`<span class="hw-lvl ${hi ? 'hi' : 'lo'}">${x.level}</span> ${x.label}` +
+        `<span class="hw-meta">GPIO${x.pin} · ${x.note}</span>`);
+    }).join("");
+
+    // Analog
+    $("analog").innerHTML = d.analog.map(x =>
+      row(`<b>${x.raw}</b><span class="hw-meta">/${x.max} · ${x.label} · GPIO${x.pin}</span>`)).join("");
+
+    // Outputs
+    $("outputs").innerHTML = d.outputs.map(x =>
+      row(`<span class="hw-meta" style="margin-left:0">${x.label} · GPIO${x.pin} · ${x.state}</span>`)).join("");
+
+    // Modbus
+    $("modbus").innerHTML = d.modbus.map(x =>
+      row(`<span class="hw-meta" style="margin-left:0">${x.label} · ${x.bus} · ${x.status}</span>`)).join("");
+  }
+
+  async function refresh() {
+    try { render(await (await fetch("/api/hardware")).json()); }
+    catch (e) { $("scan_age").textContent = "Gerät nicht erreichbar"; }
+  }
+
+  $("rescan").addEventListener("click", async () => {
+    $("scan_age").textContent = "scanne Busse…";
+    await fetch("/api/hardware/rescan", { method: "POST" });
+    setTimeout(refresh, 1500);
+  });
+
+  refresh();
+  setInterval(refresh, 3000);
+  </script>
+</body>
+</html>

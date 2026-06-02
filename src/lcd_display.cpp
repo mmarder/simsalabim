@@ -51,6 +51,13 @@ bool begin() {
   return true;
 }
 
+void setBoot(const String& msg) {
+  current = SCREEN_BOOT;
+  fmtLine(line1, DEVICE_NAME " " FIRMWARE_VERSION);
+  fmtLine(line2, msg.c_str());
+  draw();
+}
+
 void setScreen(Screen s) {
   current = s;
   if (s == SCREEN_AP) {

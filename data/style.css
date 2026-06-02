@@ -135,4 +135,28 @@ button.btn { font: inherit; cursor: pointer; }
 .ota-status { font-size: 0.9rem; margin-top: 0.5rem; color: var(--muted); }
 .ota-status.avail { color: var(--ok); font-weight: 600; }
 
+/* Hardware status list */
+.hw-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid #21262d;
+  font-size: 0.9rem;
+}
+.hw-row:last-child { border-bottom: none; }
+.hw-meta { color: var(--muted); font-size: 0.78rem; margin-left: auto; text-align: right; }
+.hw-dot {
+  width: 10px; height: 10px; border-radius: 50%;
+  display: inline-block; flex-shrink: 0;
+}
+.hw-dot.ok { background: var(--ok); box-shadow: 0 0 6px var(--ok); }
+.hw-dot.no { background: #6e3030; }
+.hw-lvl {
+  font-variant-numeric: tabular-nums; font-weight: 700; font-size: 0.72rem;
+  padding: 0.12rem 0.4rem; border-radius: 5px; min-width: 42px; text-align: center;
+}
+.hw-lvl.hi { background: #1f3a24; color: var(--ok); }
+.hw-lvl.lo { background: #3a2a1f; color: var(--warn); }
+
 .stale { opacity: 0.45; }
