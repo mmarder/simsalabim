@@ -31,6 +31,13 @@ match this string exactly (`v0.2`).
 > Versioning: `vMAJOR.MINOR`. Bump MINOR for normal changes; MAJOR for breaking
 > hardware/wiring or partition changes. The OTA comparator in
 > `ota_manager.cpp` only understands this `vN.N` form.
+>
+> **Auto-deploy:** append a lowercase `a` to the tag (e.g. `v0.7a`) to make
+> eligible devices install it automatically (firmware + filesystem) on their
+> next GitHub check — no operator action. Set `FIRMWARE_VERSION` to match
+> (e.g. `"v0.7a"`). Omit the `a` for a manual, operator-confirmed update. The
+> `a` is ignored by the version comparison, so the numeric version must still
+> increase. A loop guard (NVS) prevents re-installing the same auto tag.
 
 ---
 

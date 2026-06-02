@@ -559,6 +559,21 @@ All endpoints served by `AsyncWebServer` on port 80.
 | GET\|POST | `/api/ota/check` | `{"ok":true}` | Force an immediate GitHub release check |
 | GET\|POST | `/api/ota/install` | `{"ok":true,"status":"installing"}` / 409 | Self-update firmware from latest GitHub release (`?fs=1` also updates the filesystem); reboots on success |
 | GET\|POST | `/api/ota/install-fs` | `{"ok":true,"status":"installing"}` | Filesystem-only update (`spiffs.bin` → SPIFFS); reboots on success |
+
+`/api/ota` also returns `auto` (bool) — true when the latest release tag is an
+auto-deploy tag (see §11.5).
+
+**§11.5 Auto-deploy releases (v0.5+).** A release whose tag ends in lowercase
+`a` (e.g. `v0.7a`) is **auto-installed** by eligible devices without any user
+action: on the next GitHub check the device pulls firmware **and** filesystem
+and reboots. The trailing `a` is ignored by the version comparison
+(`isNewer()`), so `v0.7a` is "newer than v0.6". **Loop guard:** the last
+auto-installed tag is persisted in NVS (`Preferences` namespace `ota`, key
+`auto_tag`); a device never auto-installs the same tag twice, so it cannot boot
+loop even if an auto build reports a wrong version string. Firmware failure
+aborts (retries next check); filesystem is best-effort. Use auto-deploy for
+fleet-wide rollouts; use a plain tag (no `a`) when you want a manual,
+operator-confirmed update.
 | GET | `/api/hardware` | JSON | Hardware status: OneWire/I²C scan + live input/analog reads (see §11.4) |
 | GET\|POST | `/api/hardware/rescan` | `{"ok":true}` | Re-scan I²C/OneWire (performed by the LCD task to avoid bus races) |
 | GET | `/settings.html` | HTML | Settings page — live hardware status list (auto-refresh 3 s) |

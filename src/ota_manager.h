@@ -22,6 +22,10 @@ String latestRelease();
 // True if latestRelease() is newer than FIRMWARE_VERSION.
 bool updateAvailable();
 
+// True if the latest release is an auto-deploy tag (ends in 'a', e.g. "v0.7a").
+// Such releases install automatically on eligible devices.
+bool latestIsAuto();
+
 // Triggers an immediate GitHub version check (e.g. from a dashboard button).
 void checkNow();
 

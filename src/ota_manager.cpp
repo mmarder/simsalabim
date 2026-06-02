@@ -8,6 +8,7 @@
 #include <WiFiClientSecure.h>
 #include <Update.h>
 #include <ArduinoJson.h>
+#include <Preferences.h>
 
 namespace ota_manager {
 
@@ -18,6 +19,30 @@ bool g_checkRequested = false;
 bool g_installFwRequested = false;
 bool g_installFsRequested = false;
 bool g_installing = false;
+bool g_autoInstall = false;     // set when the current install was auto-triggered
+
+// A release tag ending in 'a' (e.g. "v0.7a") is an AUTO-DEPLOY release: eligible
+// devices install it without user interaction. The 'a' is ignored by isNewer().
+bool isAutoTag(const String& tag) {
+  return tag.length() > 0 && tag.charAt(tag.length() - 1) == 'a';
+}
+
+// Persisted (NVS) tag of the last successfully auto-installed release. Used as a
+// loop guard so a device never auto-installs the same tag twice — protects
+// against a boot loop even if an auto build reports a wrong version string.
+String savedAutoTag() {
+  Preferences p;
+  p.begin("ota", true);
+  String t = p.getString("auto_tag", "");
+  p.end();
+  return t;
+}
+void saveAutoTag(const String& tag) {
+  Preferences p;
+  p.begin("ota", false);
+  p.putString("auto_tag", tag);
+  p.end();
+}
 
 // Compare semantic-ish version tags "vMAJOR.MINOR". Returns true if `tag`
 // is strictly newer than the running FIRMWARE_VERSION. Tolerant of a leading
@@ -144,20 +169,27 @@ void loop() {
   // here (web task) keeps it out of the async HTTP handler.
   if (g_installFwRequested || g_installFsRequested) {
     bool fw = g_installFwRequested, fs = g_installFsRequested;
-    g_installFwRequested = g_installFsRequested = false;
+    bool autoMode = g_autoInstall;
+    g_installFwRequested = g_installFsRequested = g_autoInstall = false;
     g_installing = true;
 
     // Firmware first: it goes to the INACTIVE OTA bank, so a download failure
-    // here changes nothing and we abort before touching the single-bank SPIFFS.
-    bool ok = true;
-    if (fw) ok = downloadAndFlash("firmware.bin", U_FLASH);
-    // Filesystem last (just before reboot) to minimise the window in which a
-    // failed SPIFFS write could matter. SPIFFS.begin(true) auto-formats a
-    // corrupt FS on next boot, so a failure here is recoverable (UI re-flash).
-    if (ok && fs) ok = downloadAndFlash("spiffs.bin", U_SPIFFS);
+    // here changes nothing — we abort without touching the single-bank SPIFFS.
+    bool fwOk = fw ? downloadAndFlash("firmware.bin", U_FLASH) : true;
+    // Filesystem last and best-effort: SPIFFS.begin(true) auto-formats a corrupt
+    // FS on next boot, so a failure here is recoverable and must not block a
+    // firmware update (e.g. a release with no spiffs.bin asset).
+    bool fsOk = (fwOk && fs) ? downloadAndFlash("spiffs.bin", U_SPIFFS) : !fs;
 
     g_installing = false;
-    if (ok && (fw || fs)) { delay(500); ESP.restart(); }
+    bool didFlash = (fw && fwOk) || (fs && fsOk);
+    if (didFlash) {
+      // Record the auto-installed tag BEFORE rebooting so the device never
+      // auto-installs it again (loop guard).
+      if (autoMode && fwOk) saveAutoTag(g_latestTag);
+      delay(500);
+      ESP.restart();
+    }
     return;
   }
 
@@ -167,6 +199,17 @@ void loop() {
     g_checkRequested = false;
     g_lastCheck = millis();
     fetchLatestTag();
+
+    // Auto-deploy: an 'a'-suffixed release that is newer and not already
+    // auto-installed triggers a hands-off firmware+filesystem update.
+    if (updateAvailable() && isAutoTag(g_latestTag) &&
+        g_latestTag != savedAutoTag()) {
+      Serial.printf("[OTA] auto-deploy tag %s — installing\n",
+                    g_latestTag.c_str());
+      g_autoInstall = true;
+      g_installFwRequested = true;
+      g_installFsRequested = true;   // keep the web UI in sync with firmware
+    }
   }
 }
 
@@ -175,6 +218,8 @@ String latestRelease() { return g_latestTag; }
 bool updateAvailable() {
   return g_latestTag.length() > 0 && isNewer(g_latestTag);
 }
+
+bool latestIsAuto() { return isAutoTag(g_latestTag); }
 
 void checkNow() { g_checkRequested = true; }
 

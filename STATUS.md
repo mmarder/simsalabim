@@ -22,16 +22,19 @@ Phase 0 (bootstrap) is built, released, and **verified on a physical ESP32**.
 | Dashboard System/Update card + install button | ✅ built |
 | Real sensors / control / safety logic | ⬜ Phase 1+ |
 
-**Latest release:** `v0.4` on https://github.com/mmarder/simsalabim/releases
+**Latest release:** `v0.5` on https://github.com/mmarder/simsalabim/releases
 (repo is **public**).
-**Current dev board:** running `v0.4`, joined to WiFi `Thomas`, last seen at `192.168.1.80`.
+**Current dev board:** running `v0.5`, joined to WiFi `Thomas`, last seen at `192.168.1.80`.
 
-**v0.4 adds:** **filesystem-OTA** — the web UI (SPIFFS) can now be updated over
-the air, not just firmware. `/api/ota/install?fs=1` (firmware + UI) and
-`/api/ota/install-fs` (UI only) pull `spiffs.bin` from the release; dashboard has
-an "auch Weboberfläche" checkbox. Order is firmware-first/filesystem-last for
-safety. Also fixed a route-shadowing bug (generic `/api/ota` was capturing its
-GET subpaths). **Releases now must include a `spiffs.bin` asset.**
+**v0.5 adds:** **auto-deploy releases** — a release tag ending in `a` (e.g.
+`v0.7a`) is installed automatically by devices (firmware + filesystem) on their
+next GitHub check, no operator action. Loop guard: last auto-installed tag is
+persisted in NVS so the same tag is never installed twice. `/api/ota` now also
+returns `auto`. Use a plain tag (no `a`) for manual updates.
+
+**v0.4:** **filesystem-OTA** — web UI (SPIFFS) updatable over the air.
+`/api/ota/install?fs=1` and `/api/ota/install-fs` pull `spiffs.bin`. Firmware
+-first/filesystem-last ordering. **Releases must include a `spiffs.bin` asset.**
 
 **v0.3:** staged LCD boot messages; `/settings.html` hardware-status page (live)
 via `/api/hardware` (OneWire DS18B20 enumeration + I²C detection + live inputs).

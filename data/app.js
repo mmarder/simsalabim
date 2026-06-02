@@ -110,6 +110,10 @@
       if (o.installing) {
         status.textContent = "⏳ Update wird installiert… Gerät startet neu.";
         installBtn.hidden = true; fsWrap.hidden = true;
+      } else if (o.available && o.auto) {
+        status.textContent = "⚡ Auto-Update " + o.latest + " — wird automatisch installiert…";
+        status.className = "ota-status avail";
+        installBtn.hidden = true; fsWrap.hidden = true;
       } else if (o.available) {
         status.textContent = "⬆ Update verfügbar: " + o.latest;
         status.className = "ota-status avail";

@@ -124,6 +124,7 @@ void begin() {
     doc["latest"]    = ota_manager::latestRelease();
     doc["available"] = ota_manager::updateAvailable();
     doc["installing"] = ota_manager::installInProgress();
+    doc["auto"]      = ota_manager::latestIsAuto();
     String out;
     serializeJson(doc, out);
     req->send(200, "application/json", out);
