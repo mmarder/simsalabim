@@ -106,21 +106,22 @@
       $("ota_latest").textContent = o.latest || "(unbekannt)";
       const status = $("ota_status");
       const installBtn = $("ota_install");
+      const fsWrap = $("ota_fs_wrap");
       if (o.installing) {
         status.textContent = "⏳ Update wird installiert… Gerät startet neu.";
-        installBtn.hidden = true;
+        installBtn.hidden = true; fsWrap.hidden = true;
       } else if (o.available) {
         status.textContent = "⬆ Update verfügbar: " + o.latest;
         status.className = "ota-status avail";
-        installBtn.hidden = false;
+        installBtn.hidden = false; fsWrap.hidden = false;
       } else if (o.latest) {
         status.textContent = "✅ Aktuell (neueste Version installiert)";
         status.className = "ota-status";
-        installBtn.hidden = true;
+        installBtn.hidden = true; fsWrap.hidden = true;
       } else {
         status.textContent = "GitHub noch nicht erreicht — „GitHub prüfen“ klicken.";
         status.className = "ota-status";
-        installBtn.hidden = true;
+        installBtn.hidden = true; fsWrap.hidden = true;
       }
     } catch (e) { /* device busy / offline */ }
   }
@@ -132,10 +133,14 @@
       setTimeout(refreshOta, 3000);  // give the background check time to run
     });
     $("ota_install").addEventListener("click", async () => {
-      if (!confirm("Update jetzt installieren? Das Gerät startet neu.")) return;
+      const withFs = $("ota_fs").checked;
+      const msg = withFs
+        ? "Update inkl. Weboberfläche installieren? Das Gerät startet neu."
+        : "Update jetzt installieren? Das Gerät startet neu.";
+      if (!confirm(msg)) return;
       $("ota_status").textContent = "⏳ Starte Update…";
       $("ota_install").hidden = true;
-      await fetch("/api/ota/install", { method: "POST" });
+      await fetch("/api/ota/install" + (withFs ? "?fs=1" : ""), { method: "POST" });
     });
     refreshOta();
     setInterval(refreshOta, 10000);

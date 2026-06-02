@@ -28,13 +28,18 @@ void checkNow();
 // Requests a GitHub self-update. Non-blocking: sets a flag that loop()
 // (running in the web task) acts on, so the long download+flash never runs
 // inside an async HTTP handler. No-op if no update is available.
-void requestInstall();
+//   withFilesystem=false → flash firmware.bin only (app partition; dual-bank, safe).
+//   withFilesystem=true  → also flash spiffs.bin (filesystem/web UI).
+// Firmware is flashed first (to the inactive bank), then the filesystem last,
+// then the device reboots — so a firmware-download failure touches nothing, and
+// only a rare filesystem-write failure can leave the (single-bank) SPIFFS to be
+// re-flashed. See ARCHITECTURE.md §11.4 OTA caveat.
+void requestInstall(bool withFilesystem = false);
+
+// Requests a filesystem-only update (spiffs.bin → SPIFFS), then reboot.
+void requestInstallFilesystem();
 
 // True while a requested install is pending or in progress (for UI).
 bool installInProgress();
-
-// Downloads and flashes the latest GitHub release firmware.bin.
-// Blocks; reboots on success. Returns false on failure (no reboot).
-bool installLatest();
 
 }  // namespace ota_manager

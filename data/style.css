@@ -134,6 +134,8 @@ button.btn { font: inherit; cursor: pointer; }
 
 .ota-status { font-size: 0.9rem; margin-top: 0.5rem; color: var(--muted); }
 .ota-status.avail { color: var(--ok); font-weight: 600; }
+.ota-fs { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.6rem;
+  font-size: 0.82rem; color: var(--fg); }
 
 /* Hardware status list */
 .hw-row {

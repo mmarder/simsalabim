@@ -22,17 +22,19 @@ Phase 0 (bootstrap) is built, released, and **verified on a physical ESP32**.
 | Dashboard System/Update card + install button | ✅ built |
 | Real sensors / control / safety logic | ⬜ Phase 1+ |
 
-**Latest release:** `v0.3` on https://github.com/mmarder/simsalabim/releases
+**Latest release:** `v0.4` on https://github.com/mmarder/simsalabim/releases
 (repo is **public**).
-**Current dev board:** running `v0.3`, joined to WiFi `Thomas`, last seen at `192.168.1.80`.
+**Current dev board:** running `v0.4`, joined to WiFi `Thomas`, last seen at `192.168.1.80`.
 
-**v0.3 adds:** staged LCD boot messages (SPIFFS → hardware scan → WiFi connect
-countdown → IP); a `/settings.html` hardware-status page (live, auto-refresh)
-backed by `/api/hardware`; OneWire DS18B20 enumeration + I²C device detection.
-Verified on hardware: dashboard, settings page, hardware API (LCD detected at
-0x27, 0 DS18B20 with none wired, live input levels). ⚠️ OTA updates firmware
-only — SPIFFS changes (like `settings.html`) need a full flash; filesystem-OTA
-is a planned follow-up.
+**v0.4 adds:** **filesystem-OTA** — the web UI (SPIFFS) can now be updated over
+the air, not just firmware. `/api/ota/install?fs=1` (firmware + UI) and
+`/api/ota/install-fs` (UI only) pull `spiffs.bin` from the release; dashboard has
+an "auch Weboberfläche" checkbox. Order is firmware-first/filesystem-last for
+safety. Also fixed a route-shadowing bug (generic `/api/ota` was capturing its
+GET subpaths). **Releases now must include a `spiffs.bin` asset.**
+
+**v0.3:** staged LCD boot messages; `/settings.html` hardware-status page (live)
+via `/api/hardware` (OneWire DS18B20 enumeration + I²C detection + live inputs).
 
 ### What was verified on the physical board (2026-06-01/02)
 - Merged image flashes at `0x0`, `Hash of data verified`.

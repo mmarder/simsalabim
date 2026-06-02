@@ -557,7 +557,8 @@ All endpoints served by `AsyncWebServer` on port 80.
 | POST | `/api/config` | `{"ok":true}` or `{"error":"..."}` | Body: JSON with changed params |
 | GET | `/api/ota` | JSON `{current, latest, available, installing}` | OTA status |
 | GET\|POST | `/api/ota/check` | `{"ok":true}` | Force an immediate GitHub release check |
-| GET\|POST | `/api/ota/install` | `{"ok":true,"status":"installing"}` / 409 | Self-update from latest GitHub release; reboots on success |
+| GET\|POST | `/api/ota/install` | `{"ok":true,"status":"installing"}` / 409 | Self-update firmware from latest GitHub release (`?fs=1` also updates the filesystem); reboots on success |
+| GET\|POST | `/api/ota/install-fs` | `{"ok":true,"status":"installing"}` | Filesystem-only update (`spiffs.bin` → SPIFFS); reboots on success |
 | GET | `/api/hardware` | JSON | Hardware status: OneWire/I²C scan + live input/analog reads (see §11.4) |
 | GET\|POST | `/api/hardware/rescan` | `{"ok":true}` | Re-scan I²C/OneWire (performed by the LCD task to avoid bus races) |
 | GET | `/settings.html` | HTML | Settings page — live hardware status list (auto-refresh 3 s) |
@@ -573,10 +574,15 @@ compressor/defrost relay; SSR polarity unconfirmed) — so they cannot be
 sense-detected. Modbus devices are "Phase 1". Bus scans run at boot and on
 rescan in the LCD task (it owns I²C); input reads happen live in the web task.
 
-> ⚠️ **OTA caveat:** GitHub/ElegantOTA self-update flashes the **app partition
-> only** — it does NOT update SPIFFS (web pages). New/changed files under
-> `data/` (e.g. `settings.html` in v0.3) require a **full flash** or filesystem
-> upload. A filesystem-OTA path is a planned follow-up.
+> **OTA & the filesystem (v0.4+):** firmware OTA flashes the **app partition**
+> (dual-bank, safe). Web pages live in **SPIFFS** (single-bank). As of v0.4 the
+> filesystem can also be updated over the air: `/api/ota/install` with `?fs=1`,
+> or `/api/ota/install-fs`, pulls `spiffs.bin` from the release and flashes it
+> (`U_SPIFFS`). Order: firmware first (inactive bank), filesystem last, then one
+> reboot — so a firmware-download failure changes nothing, and a rare SPIFFS
+> write failure is recoverable (`SPIFFS.begin(true)` auto-formats; re-push the
+> filesystem). Releases must therefore include a `spiffs.bin` asset (see
+> `RELEASING.md`). First-time/bootloader/partition-table changes still need USB.
 
 **GitHub OTA security note:** the in-firmware updater uses `client.setInsecure()`
 (no TLS cert validation) for the release check and download. Deliberate: pinning

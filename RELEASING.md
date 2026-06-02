@@ -92,6 +92,7 @@ python3 "$ESPTOOL" --chip esp32 merge_bin -o "$OUT" \
   0x390000 spiffs.bin
 
 cp firmware.bin ../../../release/firmware.bin
+cp spiffs.bin   ../../../release/spiffs.bin
 cd ../../..
 ```
 
@@ -100,7 +101,9 @@ cd ../../..
 
 After this, `release/` holds:
 - `kaeltekammer-<VERSION>-merged.bin` — Windows flash @ `0x0`
-- `firmware.bin` — OTA self-update asset
+- `firmware.bin` — firmware OTA self-update asset (app partition)
+- `spiffs.bin` — **filesystem OTA asset** (web UI); required for `?fs=1` /
+  `/api/ota/install-fs` to work. Always ship it.
 - `FLASH_WINDOWS.txt` — keep current if the flow changed
 
 ---
@@ -121,6 +124,7 @@ git push
 gh release create "$VERSION" \
   release/kaeltekammer-$VERSION-merged.bin \
   release/firmware.bin \
+  release/spiffs.bin \
   release/FLASH_WINDOWS.txt \
   --repo mmarder/simsalabim \
   --title "$VERSION — <short title>" \

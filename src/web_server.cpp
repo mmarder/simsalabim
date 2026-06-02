@@ -80,17 +80,10 @@ void begin() {
     req->send(200, "application/json", out);
   });
 
-  // OTA status: current version, latest GitHub release, whether newer exists.
-  g_server.on("/api/ota", HTTP_GET, [](AsyncWebServerRequest* req) {
-    JsonDocument doc;
-    doc["current"]   = FIRMWARE_VERSION;
-    doc["latest"]    = ota_manager::latestRelease();
-    doc["available"] = ota_manager::updateAvailable();
-    doc["installing"] = ota_manager::installInProgress();
-    String out;
-    serializeJson(doc, out);
-    req->send(200, "application/json", out);
-  });
+  // NOTE: ESPAsyncWebServer matches a handler whose URI is a *prefix* of the
+  // request path, so specific /api/ota/* and /api/hardware/* routes MUST be
+  // registered BEFORE their generic parents (/api/ota, /api/hardware) — else a
+  // GET to a subpath is shadowed by the parent. Order below is deliberate.
 
   // Force an immediate GitHub version check. GET|POST so it can be triggered
   // straight from a browser address bar during bring-up.
@@ -110,14 +103,27 @@ void begin() {
                 "{\"ok\":false,\"error\":\"no update available\"}");
       return;
     }
-    ota_manager::requestInstall();
+    // ?fs=1 → also update the filesystem (web UI) alongside the firmware.
+    bool withFs = req->hasParam("fs") && req->getParam("fs")->value() == "1";
+    ota_manager::requestInstall(withFs);
     req->send(200, "application/json", "{\"ok\":true,\"status\":\"installing\"}");
   });
 
-  // Hardware status: bus scan + live input/analog reads (see hardware.cpp).
-  g_server.on("/api/hardware", HTTP_GET, [](AsyncWebServerRequest* req) {
+  // Filesystem-only update (spiffs.bin → SPIFFS) from the latest release.
+  // Updates the web UI without changing firmware. Reboots on success.
+  g_server.on("/api/ota/install-fs", HTTP_GET | HTTP_POST,
+              [](AsyncWebServerRequest* req) {
+    ota_manager::requestInstallFilesystem();
+    req->send(200, "application/json", "{\"ok\":true,\"status\":\"installing\"}");
+  });
+
+  // OTA status (generic parent — AFTER the /api/ota/* subpaths above).
+  g_server.on("/api/ota", HTTP_GET, [](AsyncWebServerRequest* req) {
     JsonDocument doc;
-    hardware::toJson(doc);
+    doc["current"]   = FIRMWARE_VERSION;
+    doc["latest"]    = ota_manager::latestRelease();
+    doc["available"] = ota_manager::updateAvailable();
+    doc["installing"] = ota_manager::installInProgress();
     String out;
     serializeJson(doc, out);
     req->send(200, "application/json", out);
@@ -128,6 +134,15 @@ void begin() {
               [](AsyncWebServerRequest* req) {
     hardware::requestRescan();
     req->send(200, "application/json", "{\"ok\":true}");
+  });
+
+  // Hardware status (generic parent — AFTER /api/hardware/* subpaths above).
+  g_server.on("/api/hardware", HTTP_GET, [](AsyncWebServerRequest* req) {
+    JsonDocument doc;
+    hardware::toJson(doc);
+    String out;
+    serializeJson(doc, out);
+    req->send(200, "application/json", out);
   });
 
   g_server.addHandler(&g_ws);

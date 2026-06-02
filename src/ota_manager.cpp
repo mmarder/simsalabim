@@ -15,7 +15,8 @@ namespace {
 String g_latestTag = "";
 uint32_t g_lastCheck = 0;
 bool g_checkRequested = false;
-bool g_installRequested = false;
+bool g_installFwRequested = false;
+bool g_installFsRequested = false;
 bool g_installing = false;
 
 // Compare semantic-ish version tags "vMAJOR.MINOR". Returns true if `tag`
@@ -81,6 +82,54 @@ void fetchLatestTag() {
   https.end();
 }
 
+// Downloads a named release asset and flashes it to the given Update target
+// (U_FLASH = app partition, U_SPIFFS = filesystem). Blocks. Does NOT reboot —
+// the caller reboots once after all requested partitions are written.
+// Returns true on a fully verified write.
+bool downloadAndFlash(const char* asset, int command) {
+  if (WiFi.status() != WL_CONNECTED) return false;
+
+  WiFiClientSecure client;
+  // See fetchLatestTag(): setInsecure() on purpose (GitHub cert rotation).
+  client.setInsecure();
+  HTTPClient https;
+  String url = "https://github.com/" + String(GITHUB_USER) + "/" +
+               String(GITHUB_REPO) + "/releases/download/" + g_latestTag + "/" +
+               asset;
+
+  https.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
+  if (!https.begin(client, url)) return false;
+  https.addHeader("User-Agent", DEVICE_NAME);
+  if (strlen(GITHUB_TOKEN) > 0) {
+    https.addHeader("Authorization", String("Bearer ") + GITHUB_TOKEN);
+  }
+
+  int code = https.GET();
+  if (code != HTTP_CODE_OK) {
+    Serial.printf("[OTA] %s download failed: HTTP %d\n", asset, code);
+    https.end();
+    return false;
+  }
+
+  int len = https.getSize();
+  if (len <= 0 || !Update.begin(len, command)) {
+    Serial.printf("[OTA] %s: bad size %d or Update.begin failed (%s)\n",
+                  asset, len, Update.errorString());
+    https.end();
+    return false;
+  }
+
+  size_t written = Update.writeStream(https.getStream());
+  https.end();
+
+  if (written != (size_t)len || !Update.end(true) || !Update.isFinished()) {
+    Serial.printf("[OTA] %s flash failed: %s\n", asset, Update.errorString());
+    return false;
+  }
+  Serial.printf("[OTA] %s flashed OK (%u bytes)\n", asset, (unsigned)written);
+  return true;
+}
+
 }  // namespace
 
 void begin(AsyncWebServer& server) {
@@ -91,14 +140,24 @@ void begin(AsyncWebServer& server) {
 void loop() {
   ElegantOTA.loop();
 
-  // A requested install takes priority. installLatest() blocks (download +
-  // flash) and reboots on success; running it here keeps it out of the async
-  // HTTP handler. If it returns, the install failed — clear the flag.
-  if (g_installRequested) {
-    g_installRequested = false;
+  // A requested install takes priority. The download+flash blocks; running it
+  // here (web task) keeps it out of the async HTTP handler.
+  if (g_installFwRequested || g_installFsRequested) {
+    bool fw = g_installFwRequested, fs = g_installFsRequested;
+    g_installFwRequested = g_installFsRequested = false;
     g_installing = true;
-    installLatest();      // reboots on success; returns only on failure
+
+    // Firmware first: it goes to the INACTIVE OTA bank, so a download failure
+    // here changes nothing and we abort before touching the single-bank SPIFFS.
+    bool ok = true;
+    if (fw) ok = downloadAndFlash("firmware.bin", U_FLASH);
+    // Filesystem last (just before reboot) to minimise the window in which a
+    // failed SPIFFS write could matter. SPIFFS.begin(true) auto-formats a
+    // corrupt FS on next boot, so a failure here is recoverable (UI re-flash).
+    if (ok && fs) ok = downloadAndFlash("spiffs.bin", U_SPIFFS);
+
     g_installing = false;
+    if (ok && (fw || fs)) { delay(500); ESP.restart(); }
     return;
   }
 
@@ -119,48 +178,21 @@ bool updateAvailable() {
 
 void checkNow() { g_checkRequested = true; }
 
-void requestInstall() {
-  if (updateAvailable()) g_installRequested = true;
+void requestInstall(bool withFilesystem) {
+  if (updateAvailable()) {
+    g_installFwRequested = true;
+    g_installFsRequested = withFilesystem;
+  }
 }
 
-bool installInProgress() { return g_installing || g_installRequested; }
+void requestInstallFilesystem() {
+  // Filesystem can be (re)flashed from the latest release regardless of the
+  // firmware version comparison — useful for pushing a UI-only fix.
+  if (g_latestTag.length() > 0) g_installFsRequested = true;
+}
 
-bool installLatest() {
-  if (!updateAvailable() || WiFi.status() != WL_CONNECTED) return false;
-
-  // Resolve the firmware.bin asset URL from the release.
-  WiFiClientSecure client;
-  // Skip cert validation: survives GitHub root-cert rotation (a pinned cert
-  // would brick remote OTA on rotation). Firmware is public; local
-  // ElegantOTA stays the trusted channel. See ARCHITECTURE.md OTA notes.
-  client.setInsecure();
-  HTTPClient https;
-  String url = "https://github.com/" + String(GITHUB_USER) + "/" +
-               String(GITHUB_REPO) + "/releases/download/" + g_latestTag +
-               "/firmware.bin";
-
-  https.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
-  if (!https.begin(client, url)) return false;
-  https.addHeader("User-Agent", DEVICE_NAME);
-  if (strlen(GITHUB_TOKEN) > 0) {
-    https.addHeader("Authorization", String("Bearer ") + GITHUB_TOKEN);
-  }
-
-  int code = https.GET();
-  if (code != HTTP_CODE_OK) { https.end(); return false; }
-
-  int len = https.getSize();
-  if (len <= 0 || !Update.begin(len)) { https.end(); return false; }
-
-  size_t written = Update.writeStream(https.getStream());
-  https.end();
-
-  if (written != (size_t)len || !Update.end(true) || !Update.isFinished()) {
-    return false;
-  }
-  delay(500);
-  ESP.restart();
-  return true;  // not reached
+bool installInProgress() {
+  return g_installing || g_installFwRequested || g_installFsRequested;
 }
 
 }  // namespace ota_manager
