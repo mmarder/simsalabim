@@ -184,13 +184,14 @@ kaeltekammer-esp32/
 │   ├── main.cpp                      Setup, task creation, SPIFFS mount
 │   ├── config.h                      All constants, pin defs, FIRMWARE_VERSION
 │   │                                 #include "config_secrets.h" (not in repo)
-│   ├── config_secrets.h              WiFi credentials, GitHub token (git-ignored)
-│   ├── SystemState.h                 Central state struct + mutex
-│   ├── wifi_manager.h / .cpp         AP setup, SPIFFS credential persistence
-│   ├── ota_manager.h / .cpp          ElegantOTA + GitHub Releases OTA
-│   ├── lcd_display.h / .cpp          16×2 I2C, phase-aware screen rotation
-│   ├── web_server.h / .cpp           AsyncWebServer, REST API, WebSocket
-│   ├── sensors/
+│   ├── config_secrets.h              WiFi credentials, GitHub token (git-ignored; .example committed)
+│   ├── SystemState.h                 Central state struct + mutex            [Phase 1 — planned]
+│   ├── wifi_manager.h / .cpp         AP setup, SPIFFS persistence, connect progress cb   [Phase 0 ✓]
+│   ├── ota_manager.h / .cpp          ElegantOTA + GitHub fw/fs OTA + auto-deploy         [Phase 0 ✓]
+│   ├── lcd_display.h / .cpp          16×2 I2C, staged boot messages, screen rotation     [Phase 0 ✓]
+│   ├── web_server.h / .cpp           AsyncWebServer, REST API, WebSocket                 [Phase 0 ✓]
+│   ├── hardware.h / .cpp             OneWire/I²C detection + live pin status (/api/hardware) [Phase 0 ✓]
+│   ├── sensors/                      [Phase 1 — planned]
 │   │   ├── temperature.h / .cpp      DS18B20 OneWire, 11 sensors, address map
 │   │   ├── humidity.h / .cpp         SHT31 I²C
 │   │   └── power.h / .cpp            SCT-013 RMS calculation, YF-S201 pulse count
@@ -211,11 +212,11 @@ kaeltekammer-esp32/
 │       ├── pv_forecast.h / .cpp      Solar position model, Samosir coords
 │       └── scheduler.h / .cpp        Load planning, night strategy
 ├── data/                             SPIFFS web files (uploaded separately)
-│   ├── index.html                    Live dashboard
-│   ├── history.html                  24h / 7d charts
-│   ├── settings.html                 Parameter editor
-│   ├── alarms.html                   Alarm log
-│   └── app.js / style.css
+│   ├── index.html                    Live dashboard + OTA card             [Phase 0 ✓]
+│   ├── settings.html                 Live hardware-status page             [Phase 0 ✓]
+│   ├── app.js / style.css            Dashboard logic + styles              [Phase 0 ✓]
+│   ├── history.html                  24h / 7d charts                       [Phase 2 — planned]
+│   └── alarms.html                   Alarm log                             [Phase 2 — planned]
 └── test/
     ├── test_modes/                   Mode determination tests
     ├── test_safety/                  Safety threshold and latch tests

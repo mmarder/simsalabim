@@ -2,21 +2,31 @@
 
 Controller firmware for the ice-cream cold store on Samosir Island, Lake Toba.
 
-See `../ARCHITECTURE.md` for the full system reference and `../DEVELOPMENT.md`
-for the mandatory development process.
+## Documentation map
+- **[STATUS.md](STATUS.md)** — start here: current state, what's verified, what's next.
+- **[ARCHITECTURE.md](ARCHITECTURE.md)** — full firmware reference (modules, state, control logic, API, tests).
+- **[DEVELOPMENT.md](DEVELOPMENT.md)** — the mandatory 7-phase, safety-focused process.
+- **[COMMISSIONING.md](COMMISSIONING.md)** — flashing, WiFi setup, OTA, and troubleshooting (field guide).
+- **[RELEASING.md](RELEASING.md)** — how to cut a new release (build → merge → tag → upload).
 
-## Current state: Phase 0 — Bootstrap
+## Current state: Phase 0 complete — verified on hardware
 
-WiFi + OTA + LCD + web dashboard mockup. No sensors or control logic yet.
+Bootstrap (network, OTA, LCD, web UI, hardware bring-up) is done and tested on a
+physical ESP32. No control/safety logic yet — that is Phase 1.
 
 | Feature | Status |
 |---------|--------|
-| WiFi (captive AP setup + SPIFFS persistence) | ✅ |
+| WiFi: captive AP setup + SPIFFS persistence + scan diagnostic | ✅ verified |
+| LCD 16×2 I²C, staged boot messages | ✅ |
+| AsyncWebServer + WebSocket dashboard (mock data) | ✅ verified |
+| Hardware-status page `/settings.html` (OneWire/I²C detect, live inputs) | ✅ verified |
 | ElegantOTA browser upload (`/update`) | ✅ |
-| GitHub Releases OTA check + install | ✅ |
-| LCD 16×2 I2C status display | ✅ |
-| AsyncWebServer + WebSocket dashboard (mock data) | ✅ |
-| Sensors / control / safety | Phase 1+ |
+| GitHub firmware OTA self-update | ✅ verified (v0.1→v0.2) |
+| Filesystem OTA (web UI updatable over the air) | ✅ verified |
+| Auto-deploy releases (tag ending in `a`, e.g. `v0.7a`) | ✅ verified (v0.5→v0.6a) |
+| Sensors / compressor control / safety layer | ⬜ Phase 1+ |
+
+Latest release: see https://github.com/mmarder/simsalabim/releases (repo is public).
 
 ## First-time setup
 
@@ -69,5 +79,16 @@ The mandatory test inventory for control logic is in `../ARCHITECTURE.md §9`.
 ## GitHub Releases OTA
 
 Tag a release on `github.com/mmarder/simsalabim` and attach `firmware.bin`
-as a release asset. The device checks every 6 h (and on demand) and can install
-the newer version. Repo is public → no token needed (`GITHUB_TOKEN` empty).
+(app), `spiffs.bin` (web UI), and `kaeltekammer-<ver>-merged.bin` (first flash).
+The device checks every 6 h (and on demand) and can install the newer version.
+Repo is public → no token needed (`GITHUB_TOKEN` empty).
+
+- **Firmware OTA** updates the app partition (dual-bank, safe).
+- **Filesystem OTA** (`?fs=1` / `/api/ota/install-fs`) updates the web UI from
+  `spiffs.bin`.
+- **Auto-deploy:** a tag ending in lowercase `a` (e.g. `v0.7a`) installs
+  automatically on devices (firmware + filesystem), no operator action; a loop
+  guard (NVS) prevents re-installing the same tag. Plain tag = manual update.
+
+See [RELEASING.md](RELEASING.md) for the full procedure and [COMMISSIONING.md](COMMISSIONING.md)
+for OTA details and the firmware-only-vs-full-flash rules.
