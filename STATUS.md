@@ -3,7 +3,7 @@
 Read this first, then `DEVELOPMENT.md` (process), `ARCHITECTURE.md` (firmware
 reference), and `COMMISSIONING.md` (flashing/WiFi/OTA field guide).
 
-_Last updated: 2026-06-02 — after v0.2 release + OTA self-update verified on hardware._
+_Last updated: 2026-06-03 — v0.8a (telemetry) released; access is now OTA-only._
 
 ---
 
@@ -22,16 +22,16 @@ Phase 0 (bootstrap) is built, released, and **verified on a physical ESP32**.
 | Dashboard System/Update card + install button | ✅ built |
 | Real sensors / control / safety logic | ⬜ Phase 1+ |
 
-**Latest release:** `v0.8a` (auto-deploy, activates telemetry)
-_Previously `v0.7`._
-
-**Latest release (prev):** `v0.7` on https://github.com/mmarder/simsalabim/releases
-(repo is **public**). v0.6a was an auto-deploy test.
+**Latest release:** `v0.8a` on https://github.com/mmarder/simsalabim/releases
+(repo is **public**) — an **auto-deploy** tag that activates telemetry.
 **Current dev board:** last known on `v0.6a`, WiFi `Thomas`. **Access is now
-OTA-only** (no USB, no local web). To push firmware to it, release an `…a`
-auto-deploy tag — it pulls within ~6 h (or on reboot). `v0.7` is a manual tag, so
-the board will NOT auto-install it; telemetry is activated by a future baked +
-auto-deployed build (see v0.7 note below).
+OTA-only** (no USB, no local web). To push firmware: release an `…a` auto-deploy
+tag — the board pulls it within ~6 h (or on reboot). Manual tags (no `a`) will
+NOT reach the board.
+**Pending live confirmation:** the board should auto-install `v0.8a` and start
+posting to the Cloudflare Worker (https://kk-status.michael-567.workers.dev).
+Confirmed live when `/data` shows `device:KK-Samosir, fw:v0.8a` (not
+`backend-test`). Backend itself already verified independently.
 
 **v0.7 adds: remote telemetry (online status).** A low-priority task POSTs the
 status JSON to a cloud endpoint (Cloudflare Worker + KV in `cloud/`, public
