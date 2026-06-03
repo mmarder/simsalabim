@@ -29,7 +29,7 @@ OTA-only** (no USB, no local web). To push firmware: release an `…a` auto-depl
 tag — the board pulls it within ~6 h (or on reboot). Manual tags (no `a`) will
 NOT reach the board.
 **Pending live confirmation:** the board should auto-install `v0.8a` and start
-posting to the Cloudflare Worker (https://kk-status.michael-567.workers.dev).
+posting to the Cloudflare Worker (https://kk-status.martes.workers.dev).
 Confirmed live when `/data` shows `device:KK-Samosir, fw:v0.8a` (not
 `backend-test`). Backend itself already verified independently.
 
