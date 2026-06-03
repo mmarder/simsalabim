@@ -15,3 +15,6 @@ src/config_secrets.h
 
 # Release binaries (published as GitHub release assets, not committed)
 release/*.bin
+
+# wrangler local cache (account id etc.)
+cloud/.wrangler/
