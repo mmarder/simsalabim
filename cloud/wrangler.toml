@@ -6,7 +6,7 @@ compatibility_date = "2025-01-01"
 #   wrangler kv namespace create STATUS_KV
 [[kv_namespaces]]
 binding = "STATUS_KV"
-id = "PASTE_KV_NAMESPACE_ID_HERE"
+id = "de1d91363a8c447fbe19bbb621c521a6"
 
 # INGEST_TOKEN is a SECRET, not set here. Set it with:
 #   wrangler secret put INGEST_TOKEN

@@ -22,7 +22,10 @@ Phase 0 (bootstrap) is built, released, and **verified on a physical ESP32**.
 | Dashboard System/Update card + install button | ✅ built |
 | Real sensors / control / safety logic | ⬜ Phase 1+ |
 
-**Latest release:** `v0.7` on https://github.com/mmarder/simsalabim/releases
+**Latest release:** `v0.8a` (auto-deploy, activates telemetry)
+_Previously `v0.7`._
+
+**Latest release (prev):** `v0.7` on https://github.com/mmarder/simsalabim/releases
 (repo is **public**). v0.6a was an auto-deploy test.
 **Current dev board:** last known on `v0.6a`, WiFi `Thomas`. **Access is now
 OTA-only** (no USB, no local web). To push firmware to it, release an `…a`

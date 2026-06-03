@@ -6,7 +6,7 @@
 // =============================================================================
 
 // ── Firmware identity ───────────────────────────────────────────────────────
-#define FIRMWARE_VERSION   "v0.7"
+#define FIRMWARE_VERSION   "v0.8a"
 #define DEVICE_NAME        "KK-Samosir"
 
 // ── GitHub Releases OTA ─────────────────────────────────────────────────────
