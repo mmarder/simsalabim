@@ -677,6 +677,9 @@ Pushed every 1 s to all connected clients. Fields with `null` indicate sensor er
   "ss_valid": true,
   "alarm_flags": 0,
   "uptime_s": 86421,
+  "free_heap": 210000,
+  "rssi": -63,
+  "reset_reason": "POWERON",
   "fw": "v0.1"
 }
 ```
